@@ -118,7 +118,7 @@ async function startServer() {
       console.log(`  DB Name:  ${config.DB.database}`);
       console.log();
       console.log('  Make sure AI service is running:');
-      console.log('  cd .. && python run.py');
+      console.log('  cd ..\\ai && python run.py');
       console.log('='.repeat(55));
       console.log();
     });

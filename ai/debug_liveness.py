@@ -1,17 +1,22 @@
 """
 Quick liveness debug — run against a test image.
 Usage:
-  ./venv/Scripts/python.exe debug_liveness.py <image_path>
-  ./venv/Scripts/python.exe debug_liveness.py  (uses webcam capture)
+  python debug_liveness.py <image_path>
+  python debug_liveness.py  (uses webcam capture)
 """
+
 import sys
-import numpy as np
-import cv2
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
-from ai.models.liveness_detector import LivenessDetector
+import cv2
+import numpy as np
+
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
 from ai.models.face_detector import FaceDetector
+from ai.models.liveness_detector import LivenessDetector
 from ai.config import PipelineConfig
 
 config = PipelineConfig()
@@ -34,10 +39,10 @@ else:
             break
         cv2.imshow("webcam", frame)
         k = cv2.waitKey(30) & 0xFF
-        if k == 32:          # SPACE
+        if k == 32:
             img = frame.copy()
             break
-        if k == 27:          # ESC
+        if k == 27:
             break
     cap.release()
     cv2.destroyAllWindows()
@@ -45,7 +50,6 @@ else:
         print("No image captured")
         sys.exit(0)
 
-# Detect face
 det = fd.detect_single_face(img)
 if not det:
     print("NO FACE DETECTED")
@@ -53,13 +57,12 @@ if not det:
 
 print(f"Face detected | confidence={det['detection_confidence']:.3f} | bbox={det['bbox']}")
 
-# Run liveness check
 result = ld.check(img, det['landmarks'], det['bbox'])
 print("\n=== LIVENESS RESULT ===")
-for k, v in result.items():
-    if isinstance(v, float):
-        print(f"  {k:30s}: {v:.4f}")
+for key, value in result.items():
+    if isinstance(value, float):
+        print(f"  {key:30s}: {value:.4f}")
     else:
-        print(f"  {k:30s}: {v}")
+        print(f"  {key:30s}: {value}")
 print(f"\nis_live = {result['is_live']}")
 print(f"liveness_score = {result.get('liveness_score', 'N/A')}")
