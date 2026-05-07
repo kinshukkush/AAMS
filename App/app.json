@@ -6,8 +6,11 @@
     "version": "1.0.0",
     "sdkVersion": "54.0.0",
     "orientation": "portrait",
+    "icon": "./src/public/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./src/public/logo.png",
+      "resizeMode": "contain",
       "backgroundColor": "#0f172a"
     },
     "assetBundlePatterns": [
@@ -16,6 +19,9 @@
     "plugins": [
       "expo-camera",
       "expo-asset"
-    ]
+    ],
+    "android": {
+      "package": "com.aams.attendance"
+    }
   }
 }

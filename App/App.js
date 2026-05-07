@@ -1,21 +1,25 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, StatusBar, Text, View, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, StatusBar, Text, View, StyleSheet, Image } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import LoginScreen from './src/screens/LoginScreen';
 import ScanScreen from './src/screens/ScanScreen';
 import { clearSession, loadSession, saveSession } from './src/storage';
 import { login, scanAttendance } from './src/api';
 
+const Stack = createStackNavigator();
+
 export default function App() {
   const [booting, setBooting] = useState(true);
   const [busy, setBusy] = useState(false);
   const [session, setSession] = useState(null);
 
-  useEffect(function() {
+  useEffect(function () {
     loadSession()
       .then(setSession)
-      .finally(function() {
+      .finally(function () {
         setBooting(false);
       });
   }, []);
@@ -52,27 +56,32 @@ export default function App() {
     return scanAttendance(session.accessToken, payload);
   }
 
-  const content = useMemo(function() {
-    if (booting) {
-      return (
-        <LinearGradient colors={['#0f172a', '#1d4ed8', '#0891b2']} style={styles.boot}>
-          <ActivityIndicator color="#ffffff" size="large" />
-          <Text style={styles.bootText}>Loading attendance app...</Text>
-        </LinearGradient>
-      );
-    }
-
-    if (!session) {
-      return <LoginScreen onLogin={handleLogin} busy={busy} />;
-    }
-
-    return <ScanScreen user={session.user} onLogout={handleLogout} onScan={handleScan} />;
-  }, [booting, busy, handleLogin, handleLogout, handleScan, session]);
+  if (booting) {
+    return (
+      <LinearGradient colors={['#0f172a', '#1d4ed8', '#0891b2']} style={styles.boot}>
+        <Image source={require('./src/public/logo.png')} style={styles.bootLogo} />
+        <ActivityIndicator color="#ffffff" size={42} />
+        <Text style={styles.bootText}>Loading attendance app...</Text>
+      </LinearGradient>
+    );
+  }
 
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
-      {content}
+      <NavigationContainer>
+        <Stack.Navigator screenOptions={{ headerShown: false, cardStyle: { backgroundColor: '#fff' } }}>
+          {!session ? (
+            <Stack.Screen name="Login">
+              {() => <LoginScreen onLogin={handleLogin} busy={busy} />}
+            </Stack.Screen>
+          ) : (
+            <Stack.Screen name="Scanner">
+              {() => <ScanScreen user={session.user} onLogout={handleLogout} onScan={handleScan} />}
+            </Stack.Screen>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
     </SafeAreaProvider>
   );
 }
@@ -83,6 +92,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
+  },
+  bootLogo: {
+    width: 120,
+    height: 120,
+    resizeMode: 'contain',
+    marginBottom: 20,
   },
   bootText: {
     color: 'white',

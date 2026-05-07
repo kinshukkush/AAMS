@@ -41,6 +41,7 @@ const App = () => {
 
   if (loading) return (
     <div className="loader-full">
+      <img src="/logo.png" alt="Logo" className="loader-logo" />
       <div className="spinner" />
       <span>Starting Face Attendance System...</span>
     </div>
