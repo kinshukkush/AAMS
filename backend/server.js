@@ -5,12 +5,37 @@ const { initializeDatabase } = require('./database/init');
 
 const app = express();
 
+const LAN_HOST_RE = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[0-1])\.)/;
+
+function isAllowedOrigin(origin) {
+  if (!origin) return true;
+  if (config.CORS_ORIGINS.includes(origin)) return true;
+
+  try {
+    const parsed = new URL(origin);
+    const hostname = parsed.hostname;
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return true;
+    }
+
+    if (LAN_HOST_RE.test(hostname)) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
 // Middleware
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || config.CORS_ORIGINS.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
+      console.error('[ERROR] CORS blocked origin:', origin);
       callback(new Error('CORS blocked'));
     }
   },

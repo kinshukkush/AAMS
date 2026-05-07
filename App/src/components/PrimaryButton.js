@@ -29,10 +29,7 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: '#2563eb',
-    shadowColor: '#2563eb',
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
+    boxShadow: '0px 10px 18px rgba(37, 99, 235, 0.28)',
     elevation: 6,
   },
   secondary: {

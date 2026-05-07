@@ -51,10 +51,7 @@ const styles = StyleSheet.create({
     borderRadius: 28,
     padding: 24,
     gap: 14,
-    shadowColor: '#0f172a',
-    shadowOpacity: 0.22,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: 16 },
+    boxShadow: '0px 16px 30px rgba(15, 23, 42, 0.22)',
     elevation: 10,
   },
   badge: {

@@ -1,5 +1,25 @@
 require('dotenv').config();
 
+function normalizeDatabaseUrl(value) {
+  if (!value) return null;
+
+  const trimmed = String(value).trim();
+  let normalized = trimmed;
+
+  normalized = normalized.replace(/^postgresqchannel_bindingl:\/\//i, 'postgresql://');
+  normalized = normalized.replace(/[?&]=require\b/i, '&channel_binding=require');
+
+  if (!/^postgresql?:\/\//i.test(normalized)) {
+    return trimmed;
+  }
+
+  if (normalized !== trimmed) {
+    console.warn('[DB] Normalized malformed DATABASE_URL from .env');
+  }
+
+  return normalized;
+}
+
 module.exports = {
   PORT: process.env.PORT || 8000,
   JWT_SECRET: process.env.JWT_SECRET || 'fallback-secret-key',
@@ -17,7 +37,7 @@ module.exports = {
   ],
   // PostgreSQL config — supports both individual fields AND connection string
   DB: {
-    connectionString: process.env.DATABASE_URL || null,
+    connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL),
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT) || 5432,
     database: process.env.DB_NAME || 'face_attendance',

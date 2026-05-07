@@ -4,12 +4,18 @@
     "slug": "aams-attendance",
     "scheme": "aamsattendance",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
       "backgroundColor": "#0f172a"
     },
-    "assetBundlePatterns": ["**/*"],
-    "plugins": ["expo-camera"]
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-camera",
+      "expo-asset"
+    ]
   }
 }

@@ -1,0 +1,17 @@
+# EAS build ignore — keep repo small for cloud builds
+node_modules
+.git
+.env
+.env.*
+.expo
+.expo-shared
+build
+dist
+frontend/build
+App/.expo
+.vscode
+.idea
+*.log
+__pycache__
+venv
+.venv
