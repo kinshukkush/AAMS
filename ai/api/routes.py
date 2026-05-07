@@ -19,30 +19,33 @@ from typing import Optional, List
 import uvicorn
 import traceback
 
-from ai.config import PipelineConfig
-from ai.pipeline import FaceRecognitionPipeline
-from ai.utils.image_utils import ImageProcessor
+# (AI imports moved to getter functions for lazy loading)
 
-# ── Initialize ──
-config = PipelineConfig()
-pipeline = FaceRecognitionPipeline(config)
-ip = ImageProcessor()
+# ── Initialize (Lazy) ──
+_pipeline = None
+
+def get_pipeline():
+    global _pipeline
+    if _pipeline is None:
+        from ai.config import PipelineConfig
+        from ai.pipeline import FaceRecognitionPipeline
+        config = PipelineConfig()
+        _pipeline = FaceRecognitionPipeline(config)
+    return _pipeline
+
+def get_image_processor():
+    from ai.utils.image_utils import ImageProcessor
+    return ImageProcessor()
 
 app = FastAPI(
     title="Face Recognition Attendance API",
-    description=(
-        "Multi-stage pipeline:\n"
-        "- Level 1: FaceNet 128-d Embedding\n"
-        "- Level 2A: Anti-Spoofing (LBP + Blink + Color + Moiré)\n"
-        "- Level 2B: Head Pose Check (±20°)\n"
-        "- Level 3: Weighted Confidence Scoring (3-tier)"
-    ),
-    version="1.0.0"
+    description="Multi-stage AI Pipeline (Lazy Loaded)",
+    version="1.1.0"
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.CORS_ORIGINS,
+    allow_origins=["*"], # Allow all for now, or load from get_pipeline().config.CORS_ORIGINS if needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -96,7 +99,10 @@ def root():
 
 @app.get("/health")
 def health():
-    return pipeline.status()
+    # Return simple status if not loaded yet, full status if loaded
+    if _pipeline is None:
+        return {"status": "operational", "ai_status": "ready_to_load", "load_state": "idle"}
+    return get_pipeline().status()
 
 
 @app.post("/register/upload")
@@ -109,8 +115,8 @@ async def register_upload(
         contents = await file.read()
         if len(contents) == 0:
             raise HTTPException(400, "Empty file uploaded")
-        image = ip.load_from_bytes(contents)
-        result = pipeline.register_face(image, person_id, person_name)
+        image = get_image_processor().load_from_bytes(contents)
+        result = get_pipeline().register_face(image, person_id, person_name)
         if not result["success"]:
             raise HTTPException(400, detail=result)
         return result
@@ -125,8 +131,8 @@ async def register_base64(req: Base64Request):
     if not req.person_id or not req.person_name:
         raise HTTPException(400, "person_id and person_name are required")
     try:
-        image = ip.load_from_base64(req.image)
-        result = pipeline.register_face(image, req.person_id, req.person_name)
+        image = get_image_processor().load_from_base64(req.image)
+        result = get_pipeline().register_face(image, req.person_id, req.person_name)
         if not result["success"]:
             raise HTTPException(400, detail=result)
         return result
@@ -143,8 +149,8 @@ async def register_video(req: Base64VideoRequest):
     if not req.frames:
         raise HTTPException(400, "frames are required")
     try:
-        images = [ip.load_from_base64(frame) for frame in req.frames[:8]]
-        result = pipeline.register_faces_from_frames(
+        images = [get_image_processor().load_from_base64(frame) for frame in req.frames[:8]]
+        result = get_pipeline().register_faces_from_frames(
             images, req.person_id, req.person_name,
             min_samples=max(1, int(req.min_samples or 3))
         )
@@ -163,8 +169,8 @@ async def verify_upload(file: UploadFile = File(...)):
         contents = await file.read()
         if len(contents) == 0:
             raise HTTPException(400, "Empty file uploaded")
-        image = ip.load_from_bytes(contents)
-        return pipeline.verify_face(image)
+        image = get_image_processor().load_from_bytes(contents)
+        return get_pipeline().verify_face(image)
     except HTTPException:
         raise
     except Exception as e:
@@ -174,8 +180,8 @@ async def verify_upload(file: UploadFile = File(...)):
 @app.post("/verify/base64")
 async def verify_base64(req: Base64Request):
     try:
-        image = ip.load_from_base64(req.image)
-        return pipeline.verify_face(image)
+        image = get_image_processor().load_from_base64(req.image)
+        return get_pipeline().verify_face(image)
     except HTTPException:
         raise
     except Exception as e:
@@ -187,8 +193,8 @@ async def verify_video(req: Base64VideoRequest):
     if not req.frames:
         raise HTTPException(400, "frames are required")
     try:
-        images = [ip.load_from_base64(frame) for frame in req.frames[:12]]
-        return pipeline.verify_faces_from_frames(images)
+        images = [get_image_processor().load_from_base64(frame) for frame in req.frames[:12]]
+        return get_pipeline().verify_faces_from_frames(images)
     except HTTPException:
         raise
     except Exception as e:
@@ -197,25 +203,27 @@ async def verify_video(req: Base64VideoRequest):
 
 @app.get("/persons")
 def list_persons():
-    persons = pipeline.list_persons()
+    persons = get_pipeline().list_persons()
     return {"persons": persons, "total": len(persons)}
 
 
 @app.delete("/persons/{person_id}")
 def delete_person(person_id: str):
-    if pipeline.delete_person(person_id):
+    if get_pipeline().delete_person(person_id):
         return {"success": True, "deleted": person_id}
     raise HTTPException(404, f"Person {person_id} not found")
 
 
 # ── Startup ──
 if __name__ == "__main__":
+    # We use default config values for the announcement logs
     print()
     print("=" * 50)
     print("  FACE RECOGNITION ATTENDANCE API")
-    print(f"  Server:  http://localhost:{config.API_PORT}")
-    print(f"  Docs:    http://localhost:{config.API_PORT}/docs")
-    print(f"  Health:  http://localhost:{config.API_PORT}/health")
+    print("  Server:  http://localhost:8001")
+    print("  Docs:    http://localhost:8001/docs")
+    print("  Health:  http://localhost:8001/health")
     print("=" * 50)
     print()
-    uvicorn.run(app, host=config.API_HOST, port=config.API_PORT)
+    # In production, uvicorn is usually run from CLI, but for local:
+    uvicorn.run(app, host="0.0.0.0", port=8001)
