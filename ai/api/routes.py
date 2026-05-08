@@ -3,14 +3,6 @@ REST API for Face Recognition Attendance System.
 Connects AI pipeline to your website backend.
 """
 
-from pathlib import Path
-import sys
-
-# Fix import path
-_project_root = str(Path(__file__).parent.parent.parent)
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
-
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
