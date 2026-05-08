@@ -462,7 +462,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 120,
-    background: 'linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.04))',
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
     borderTopLeftRadius: 100,
     borderTopRightRadius: 100,
   },
