@@ -16,6 +16,7 @@ RUN python -m pip install --no-cache-dir -r /tmp/requirements.txt
 COPY . /app/ai
 
 ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8001
 
